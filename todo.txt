@@ -1,0 +1,4 @@
+- add some API to create VST hosts
+- add some API to create boath vamp host and plugin
+- maybe functions that are exist in headers will go to there own source files instead of headers, witch helps linking of applications better in MinGW
+- write documentation for classes and functions by doxygen
