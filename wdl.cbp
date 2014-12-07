@@ -4266,6 +4266,7 @@
 		<Unit filename="WDL/IPlug/IMidiQueue.h" />
 		<Unit filename="WDL/IPlug/IParam.cpp" />
 		<Unit filename="WDL/IPlug/IParam.h" />
+		<Unit filename="WDL/IPlug/IPlug.h" />
 		<Unit filename="WDL/IPlug/IPlugBase.cpp" />
 		<Unit filename="WDL/IPlug/IPlugBase.h" />
 		<Unit filename="WDL/IPlug/IPlugOSDetect.h" />
@@ -4279,7 +4280,6 @@
 		<Unit filename="WDL/IPlug/IPlugVST3.def" />
 		<Unit filename="WDL/IPlug/IPlugVST3.h" />
 		<Unit filename="WDL/IPlug/IPlug_Prefix.pch" />
-		<Unit filename="WDL/IPlug/IPlug_include_in_plug_hdr.h" />
 		<Unit filename="WDL/IPlug/IPlug_include_in_plug_src.h" />
 		<Unit filename="WDL/IPlug/IPopupMenu.cpp" />
 		<Unit filename="WDL/IPlug/IPopupMenu.h" />
@@ -4358,7 +4358,6 @@
 		<Unit filename="WDL/gpu/gpu.h" />
 		<Unit filename="WDL/gpu/wglext.h" />
 		<Unit filename="WDL/heapbuf.h" />
-		<Unit filename="WDL/history.txt" />
 		<Unit filename="WDL/jnetlib/Makefile" />
 		<Unit filename="WDL/jnetlib/asyncdns.cpp" />
 		<Unit filename="WDL/jnetlib/asyncdns.h" />
@@ -4644,29 +4643,145 @@
 		<Unit filename="WDL/lice/lice_text.h" />
 		<Unit filename="WDL/lice/lice_textnew.cpp" />
 		<Unit filename="WDL/lice/makedist.bat" />
-		<Unit filename="WDL/lice/test/Controller.h" />
-		<Unit filename="WDL/lice/test/Controller.mm" />
-		<Unit filename="WDL/lice/test/English.lproj/InfoPlist.strings" />
-		<Unit filename="WDL/lice/test/English.lproj/MainMenu.nib/classes.nib" />
-		<Unit filename="WDL/lice/test/English.lproj/MainMenu.nib/info.nib" />
-		<Unit filename="WDL/lice/test/English.lproj/MainMenu.nib/keyedobjects.nib" />
-		<Unit filename="WDL/lice/test/Info.plist" />
-		<Unit filename="WDL/lice/test/fly.cpp" />
-		<Unit filename="WDL/lice/test/image.png" />
-		<Unit filename="WDL/lice/test/imgs2gif.cpp" />
-		<Unit filename="WDL/lice/test/main.cpp" />
-		<Unit filename="WDL/lice/test/main.ico" />
-		<Unit filename="WDL/lice/test/main.m" />
-		<Unit filename="WDL/lice/test/resource.h" />
-		<Unit filename="WDL/lice/test/test.dsp" />
-		<Unit filename="WDL/lice/test/test.rc">
-			<Option compilerVar="WINDRES" />
-		</Unit>
-		<Unit filename="WDL/lice/test/test.sln" />
-		<Unit filename="WDL/lice/test/test.vcxproj" />
-		<Unit filename="WDL/lice/test/test.vcxproj.filters" />
-		<Unit filename="WDL/lice/test/test.xcodeproj/project.pbxproj" />
 		<Unit filename="WDL/lineparse.h" />
+		<Unit filename="WDL/lzma/7z.h" />
+		<Unit filename="WDL/lzma/7zAlloc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zAlloc.h" />
+		<Unit filename="WDL/lzma/7zBuf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zBuf.h" />
+		<Unit filename="WDL/lzma/7zBuf2.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zCrc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zCrc.h" />
+		<Unit filename="WDL/lzma/7zCrcOpt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zDec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zFile.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zFile.h" />
+		<Unit filename="WDL/lzma/7zIn.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zStream.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/7zVersion.h" />
+		<Unit filename="WDL/lzma/Alloc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Alloc.h" />
+		<Unit filename="WDL/lzma/Bcj2.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Bcj2.h" />
+		<Unit filename="WDL/lzma/Bra.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Bra.h" />
+		<Unit filename="WDL/lzma/Bra86.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/BraIA64.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/CpuArch.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/CpuArch.h" />
+		<Unit filename="WDL/lzma/Delta.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Delta.h" />
+		<Unit filename="WDL/lzma/LzFind.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzFind.h" />
+		<Unit filename="WDL/lzma/LzFindMt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzFindMt.h" />
+		<Unit filename="WDL/lzma/LzHash.h" />
+		<Unit filename="WDL/lzma/Lzma2Dec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Lzma2Dec.h" />
+		<Unit filename="WDL/lzma/Lzma2Enc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Lzma2Enc.h" />
+		<Unit filename="WDL/lzma/Lzma86.h" />
+		<Unit filename="WDL/lzma/Lzma86Dec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Lzma86Enc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzmaDec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzmaDec.h" />
+		<Unit filename="WDL/lzma/LzmaEnc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzmaEnc.h" />
+		<Unit filename="WDL/lzma/LzmaLib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/LzmaLib.h" />
+		<Unit filename="WDL/lzma/MtCoder.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/MtCoder.h" />
+		<Unit filename="WDL/lzma/Ppmd.h" />
+		<Unit filename="WDL/lzma/Ppmd7.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Ppmd7.h" />
+		<Unit filename="WDL/lzma/Ppmd7Dec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Ppmd7Enc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/RotateDefs.h" />
+		<Unit filename="WDL/lzma/Sha256.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Sha256.h" />
+		<Unit filename="WDL/lzma/Threads.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Threads.h" />
+		<Unit filename="WDL/lzma/Types.h" />
+		<Unit filename="WDL/lzma/Xz.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/Xz.h" />
+		<Unit filename="WDL/lzma/XzCrc64.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/XzCrc64.h" />
+		<Unit filename="WDL/lzma/XzDec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/XzEnc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/lzma/XzEnc.h" />
+		<Unit filename="WDL/lzma/XzIn.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="WDL/makedist.bat" />
 		<Unit filename="WDL/md5.c">
 			<Option compilerVar="CC" />
@@ -4678,7 +4793,34 @@
 		<Unit filename="WDL/nsv/nsvbs.h" />
 		<Unit filename="WDL/nsv/nsvlib.cpp" />
 		<Unit filename="WDL/nsv/nsvlib.h" />
+		<Unit filename="WDL/oscpack/IpEndpointName.cpp" />
+		<Unit filename="WDL/oscpack/IpEndpointName.h" />
+		<Unit filename="WDL/oscpack/LICENSE" />
+		<Unit filename="WDL/oscpack/MessageMappingOscPacketListener.h" />
+		<Unit filename="WDL/oscpack/NetworkingUtils.h" />
+		<Unit filename="WDL/oscpack/OscException.h" />
+		<Unit filename="WDL/oscpack/OscHostEndianness.h" />
+		<Unit filename="WDL/oscpack/OscOutboundPacketStream.cpp" />
+		<Unit filename="WDL/oscpack/OscOutboundPacketStream.h" />
+		<Unit filename="WDL/oscpack/OscPacketListener.h" />
+		<Unit filename="WDL/oscpack/OscPrintReceivedElements.cpp" />
+		<Unit filename="WDL/oscpack/OscPrintReceivedElements.h" />
+		<Unit filename="WDL/oscpack/OscReceivedElements.cpp" />
+		<Unit filename="WDL/oscpack/OscReceivedElements.h" />
+		<Unit filename="WDL/oscpack/OscTypes.cpp" />
+		<Unit filename="WDL/oscpack/OscTypes.h" />
+		<Unit filename="WDL/oscpack/PacketListener.h" />
+		<Unit filename="WDL/oscpack/TimerListener.h" />
+		<Unit filename="WDL/oscpack/UdpSocket.h" />
+		<Unit filename="WDL/oscpack/win32/NetworkingUtils.cpp" />
+		<Unit filename="WDL/oscpack/win32/UdpSocket.cpp" />
 		<Unit filename="WDL/pcmfmtcvt.h" />
+		<Unit filename="WDL/phelix.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/phelix.h" />
+		<Unit filename="WDL/phelixKAT.h" />
+		<Unit filename="WDL/platform.h" />
 		<Unit filename="WDL/plush2/pl_cam.cpp" />
 		<Unit filename="WDL/plush2/pl_make.cpp" />
 		<Unit filename="WDL/plush2/pl_math.cpp" />
@@ -4836,7 +4978,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="WDL/zlib/zutil.h" />
-		<Unit filename="backup.command" />
 		<Unit filename="common.props" />
 		<Unit filename="common.xcconfig" />
 		<Unit filename="todo.txt" />

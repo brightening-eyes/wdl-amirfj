@@ -31,5 +31,4 @@ WDL includes the following 3rd party libraries (which are all similarly licensed
 * LibPNG http://www.libpng.org/pub/png
 * GifLib http://sourceforge.net/projects/libungif
 * JPEGLib http://www.ijg.org
-*oscpack http://www.rossbencina.com/code/oscpack
 * zlib http://www.zlib.net
