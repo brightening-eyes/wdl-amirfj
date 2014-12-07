@@ -59,6 +59,13 @@ struct svgtiny_named_color
 #define MAX_HASH_VALUE 565
 /* maximum key range = 562, duplicates = 0 */
 
+#ifdef __GNUC__
+__inline
+#else
+#ifdef __cplusplus
+inline
+#endif
+#endif
 static unsigned int
 svgtiny_color_hash (register const char *str, register unsigned int len)
 {
@@ -126,7 +133,10 @@ svgtiny_color_hash (register const char *str, register unsigned int len)
   return hval;
 }
 
-static const struct svgtiny_named_color *
+#ifdef __GNUC__
+__inline
+#endif
+const struct svgtiny_named_color *
 svgtiny_color_lookup (register const char *str, register unsigned int len)
 {
   static const struct svgtiny_named_color wordlist[] =
