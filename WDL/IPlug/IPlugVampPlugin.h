@@ -25,7 +25,9 @@ freely, subject to the following restrictions:
 */
 
 #include "IPlugBase.h"
-#include "vamp-sdk/vamp-sdk.h"
+#include "vamp-sdk/Plugin.h"
+#include "vamp-sdk/PluginAdapter.h"
+#include <string>
 
 struct IPlugInstanceInfo
 {
@@ -37,7 +39,7 @@ using namespace Vamp;
 class IPlugVampPlugin: public Plugin
 {
 public:
-IPlugVampPlugin(IPlugInstanceInfo, const char*, const char*, const char*, const char*, const char*, int, size_t, size_t, size_t, size_t);
+IPlugVampPlugin(IPlugInstanceInfo, const char*, const char*, const char*, const char*, const char*, int, size_t, size_t, size_t, size_t, size_t);
 virtual ~IPlugVampPlugin();
 virtual bool initialise(size_t inputChannels, size_t stepSize, size_t blockSize);
 virtual void reset();
@@ -50,7 +52,7 @@ virtual OutputList getOutputDescriptors();
 virtual FeatureSet process(const float *const *inputBuffers, RealTime timestamp);
 virtual FeatureSet getRemainingFeatures();
 std::string getIdentifier() const;
-std::String getName() const;
+std::string getName() const;
 std::string getDiscription() const;
 std::string getMaker() const;
 std::string getCopyright() const;
@@ -73,6 +75,7 @@ size_t plugin_max_channels;
 size_t plugin_min_channels;
 size_t plugin_block_size;
 size_t plugin_step_size;
+size_t plugin_samplerate;
 };
 
 

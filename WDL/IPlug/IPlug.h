@@ -8,12 +8,12 @@
 #include "resource.h" // This is your plugin's resource.h
 
 #ifdef VST_API
-  #include "IPlugVST.h"
-  typedef IPlugVST IPlug;
+  #include "IPlugVSTPlugin.h"
+  typedef IPlugVSTPlugin IPlug;
   #define API_EXT "vst"
 #elif VST3_API
-  #include "IPlugVST3.h"
-  typedef IPlugVST3 IPlug;
+  #include "IPlugVST3Plugin.h"
+  typedef IPlugVST3Plugin IPlug;
   #define API_EXT "vst3"
 #elif defined AU_API
   #include "IPlugAU.h"
@@ -29,10 +29,14 @@
   typedef IPlugAAX IPlug;
   #define API_EXT "aax"
   #define PROTOOLS
-#elif defined SA_API
+#elif SA_API
   #include "IPlugStandalone.h"
   typedef IPlugStandalone IPlug;
   #define API_EXT "standalone"
+#elif VAMP_API
+#include "IPlugVampPlugin.h"
+typedef IPlugVampPlugin IPlug;
+#define API_EXT "vamp"
 #else
   #error "No API defined!"
 #endif

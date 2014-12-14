@@ -26,7 +26,7 @@ freely, subject to the following restrictions:
 using namespace std;
 using namespace Vamp;
 
-IPlugVampPlugin::IPlugVampPlugin(IPlugInstanceInfo info, const char* id, const char* name, const char* discription, const char* copyright, const char* maker int version, size_t max_channels, size_t min_channels, size_t block_size, size_t step_size):
+IPlugVampPlugin::IPlugVampPlugin(IPlugInstanceInfo info, const char* id, const char* name, const char* discription, const char* copyright, const char* maker, int version, size_t max_channels, size_t min_channels, size_t samplerate, size_t block_size, size_t step_size):
 plugin_id(id),
 plugin_name(name),
 plugin_discription(discription),
@@ -36,7 +36,9 @@ plugin_version(version),
 plugin_max_channels(max_channels),
 plugin_min_channels(min_channels),
 plugin_block_size(block_size),
-plugin_step_size(step_size)
+plugin_step_size(step_size),
+plugin_samplerate(samplerate),
+Plugin(plugin_samplerate)
 {
 
 }
@@ -46,27 +48,27 @@ string IPlugVampPlugin::getIdentifier() const
 return plugin_id;
 }
 
-string iPlugVampPlugin::getName() const
+string IPlugVampPlugin::getName() const
 {
 return plugin_name;
 }
 
-string iPlugVampPlugin::getDiscription() const
+string IPlugVampPlugin::getDiscription() const
 {
 return plugin_discription;
 }
 
-string iPlugVampPlugin::getMaker() const
+string IPlugVampPlugin::getMaker() const
 {
 return plugin_maker;
 }
 
-string iPlugVampPlugin::getCopyright() const
+string IPlugVampPlugin::getCopyright() const
 {
 return plugin_copyright;
 }
 
-int iPlugVampPlugin::getPluginVersion() const
+int IPlugVampPlugin::getPluginVersion() const
 {
 return plugin_version;
 }
