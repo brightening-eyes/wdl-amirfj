@@ -4400,12 +4400,6 @@
 		<Unit filename="WDL/cmath/durand_kerner.h" />
 		<Unit filename="WDL/cmath/factorial.h" />
 		<Unit filename="WDL/cmath/horner.h" />
-		<Unit filename="WDL/cmath/test_bessel.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="WDL/cmath/test_eval.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="WDL/convoengine.cpp" />
 		<Unit filename="WDL/convoengine.h" />
 		<Unit filename="WDL/db2val.h" />
@@ -4451,7 +4445,6 @@
 		<Unit filename="WDL/gpu/gpu.h" />
 		<Unit filename="WDL/gpu/wglext.h" />
 		<Unit filename="WDL/heapbuf.h" />
-		<Unit filename="WDL/jnetlib/Makefile" />
 		<Unit filename="WDL/jnetlib/asyncdns.cpp" />
 		<Unit filename="WDL/jnetlib/asyncdns.h" />
 		<Unit filename="WDL/jnetlib/connection.cpp" />
@@ -4465,10 +4458,6 @@
 		<Unit filename="WDL/jnetlib/listen.cpp" />
 		<Unit filename="WDL/jnetlib/listen.h" />
 		<Unit filename="WDL/jnetlib/netinc.h" />
-		<Unit filename="WDL/jnetlib/test.cpp" />
-		<Unit filename="WDL/jnetlib/test.dsp" />
-		<Unit filename="WDL/jnetlib/test.dsw" />
-		<Unit filename="WDL/jnetlib/testbnc.cpp" />
 		<Unit filename="WDL/jnetlib/util.cpp" />
 		<Unit filename="WDL/jnetlib/util.h" />
 		<Unit filename="WDL/jnetlib/webserver.cpp" />
@@ -4682,7 +4671,6 @@
 		<Unit filename="WDL/libpng/pngwutil.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="WDL/lice/Makefile" />
 		<Unit filename="WDL/lice/glew/include/GL/WGLEXT.H" />
 		<Unit filename="WDL/lice/glew/include/GL/glew.h" />
 		<Unit filename="WDL/lice/glew/include/GL/glxew.h" />
@@ -4697,15 +4685,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="WDL/lice/lice.cpp" />
-		<Unit filename="WDL/lice/lice.dsp" />
-		<Unit filename="WDL/lice/lice.dsw" />
 		<Unit filename="WDL/lice/lice.h" />
-		<Unit filename="WDL/lice/lice.props" />
-		<Unit filename="WDL/lice/lice.vcxproj" />
-		<Unit filename="WDL/lice/lice.vcxproj.filters" />
-		<Unit filename="WDL/lice/lice.xcconfig" />
-		<Unit filename="WDL/lice/lice.xcodeproj/oli.pbxuser" />
-		<Unit filename="WDL/lice/lice.xcodeproj/project.pbxproj" />
 		<Unit filename="WDL/lice/lice_arc.cpp" />
 		<Unit filename="WDL/lice/lice_bezier.h" />
 		<Unit filename="WDL/lice/lice_bmp.cpp" />
@@ -4735,7 +4715,6 @@
 		<Unit filename="WDL/lice/lice_text.cpp" />
 		<Unit filename="WDL/lice/lice_text.h" />
 		<Unit filename="WDL/lice/lice_textnew.cpp" />
-		<Unit filename="WDL/lice/makedist.bat" />
 		<Unit filename="WDL/lineparse.h" />
 		<Unit filename="WDL/lzma/7z.h" />
 		<Unit filename="WDL/lzma/7zAlloc.c">
@@ -4925,7 +4904,6 @@
 		<Unit filename="WDL/plush2/pl_read_jaw.cpp" />
 		<Unit filename="WDL/plush2/pl_spline.cpp" />
 		<Unit filename="WDL/plush2/plush.h" />
-		<Unit filename="WDL/plush2/plush2.dsp" />
 		<Unit filename="WDL/poollist.h" />
 		<Unit filename="WDL/projectcontext.cpp" />
 		<Unit filename="WDL/projectcontext.h" />
