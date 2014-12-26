@@ -39,6 +39,9 @@
 			<Add option="-DRELEASE=1" />
 			<Add option="-DVAMP_SDK_MAJOR_VERSION=2" />
 			<Add option="-DVAMP_SDK_MINOR_VERSION=5" />
+			<Add option="-DWDL_FFT_REALSIZE=8" />
+			<Add option="-DNSEEL_LOOPFUNC_SUPPORT_MAXLEN=0" />
+			<Add option="-DEEL_TARGET_PORTABLE" />
 			<Add directory="$(PROJECTDIR)VST_SDK" />
 			<Add directory="$(PROJECTDIR)ASIO_SDK" />
 			<Add directory="$(PROJECTDIR)VST3_SDK" />
@@ -4408,6 +4411,25 @@
 		<Unit filename="WDL/des.h" />
 		<Unit filename="WDL/destroycheck.h" />
 		<Unit filename="WDL/dirscan.h" />
+		<Unit filename="WDL/eel2/loose_eel.cpp" />
+		<Unit filename="WDL/eel2/nseel-caltab.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/eel2/nseel-compiler.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/eel2/nseel-eval.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/eel2/nseel-lextab.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/eel2/nseel-ram.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="WDL/eel2/nseel-yylex.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="WDL/fastqueue.h" />
 		<Unit filename="WDL/ffmpeg.h" />
 		<Unit filename="WDL/fft.c">
