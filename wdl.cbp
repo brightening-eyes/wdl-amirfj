@@ -4343,7 +4343,6 @@
 		<Unit filename="VST_SDK/readme.txt" />
 		<Unit filename="VST_SDK/vstfxstore.h" />
 		<Unit filename="WDL/IPlug/Containers.h" />
-		<Unit filename="WDL/IPlug/Doxyfile" />
 		<Unit filename="WDL/IPlug/Hosts.cpp" />
 		<Unit filename="WDL/IPlug/Hosts.h" />
 		<Unit filename="WDL/IPlug/IAutoGUI.h" />
@@ -4411,7 +4410,6 @@
 		<Unit filename="WDL/des.h" />
 		<Unit filename="WDL/destroycheck.h" />
 		<Unit filename="WDL/dirscan.h" />
-		<Unit filename="WDL/eel2/loose_eel.cpp" />
 		<Unit filename="WDL/eel2/nseel-caltab.c">
 			<Option compilerVar="CC" />
 		</Unit>
