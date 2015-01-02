@@ -53,6 +53,9 @@
 			<Add directory="$(PROJECTDIR)VST3_SDK/public.sdk/source/vst2.x" />
 			<Add directory="$(PROJECTDIR)VAMP_SDK" />
 			<Add directory="$(PROJECTDIR)WDL/lice/glew/include" />
+			<Add directory="$(PROJECTDIR)MAX_SDK/c74support/jit-includes" />
+			<Add directory="$(PROJECTDIR)MAX_SDK/c74support/max-includes" />
+			<Add directory="$(PROJECTDIR)MAX_SDK/c74support/msp-includes" />
 		</Compiler>
 		<Unit filename=".gitignore" />
 		<Unit filename="AAX_SDK/readme.txt" />
