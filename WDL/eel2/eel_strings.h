@@ -119,7 +119,7 @@ class eel_string_context_state
   public:
     static int cmpistr(const char **a, const char **b) { return stricmp(*a,*b); }
 
-    eel_string_context_state()  : m_varname_cache(cmpistr), m_named_strings_names(false)
+    eel_string_context_state()  : m_named_strings_names(false), m_varname_cache(cmpistr)
     {
       m_vm=0;
       memset(m_user_strings,0,sizeof(m_user_strings));
@@ -441,10 +441,10 @@ int eel_format_strings(void *opaque, const char *fmt, const char *fmt_end, char 
         const int maxl=(int) (buf+buf_sz - 2 - op);
         if (wr && !fs[2]) // %s or %S -- todo: implement padding modes for binary compat too?
         {
-          int l = wr->GetLength();
-          if (l > maxl) l=maxl;
-          memcpy(op,wr->Get(),l);
-          op += l;
+          int wl = wr->GetLength();
+          if (wl > maxl) wl=maxl;
+          memcpy(op,wr->Get(),wl);
+          op += wl;
           *op=0;
         }
         else
@@ -522,7 +522,7 @@ static int eel_string_match(void *opaque, const char *fmt, const char *msg, int 
     }
 
     // if string ends and format is not on a wildcard, early-out to 0
-    if (msg>=msg_endptr && *fmt != '*') return 0;
+    if (msg>=msg_endptr && *fmt != '*' && *fmt != '%') return 0;
 
     switch (*fmt)
     {

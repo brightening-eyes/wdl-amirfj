@@ -301,6 +301,11 @@ class LICE_SubBitmap : public LICE_IBitmap // note: you should only keep these a
 
 #define LICE_BLIT_USE_ALPHA 0x10000 // use source's alpha channel
 
+#ifndef lice_max
+#define lice_max(x,y) ((x)<(y)?(y):(x))
+#define lice_min(x,y) ((x)<(y)?(x):(y))
+#endif
+
 
 // Reaper exports most LICE functions, so the function declarations below
 // will collide with reaper_plugin.h
@@ -398,6 +403,11 @@ void LICE_TransformBlit2(LICE_IBitmap *dest, LICE_IBitmap *src,
                     const double *srcpoints, int div_w, int div_h, // srcpoints coords should be div_w*div_h*2 long, and be in source image coordinates
                     float alpha, int mode);
 
+void LICE_TransformBlit2Alpha(LICE_IBitmap *dest, LICE_IBitmap *src,  
+                    int dstx, int dsty, int dstw, int dsth,
+                    const double *srcpoints, int div_w, int div_h, // srcpoints coords should be div_w*div_h*3 long, and be in source image coordinates + alpha
+                    int mode);
+
 // if cliptosourcerect is false, then areas outside the source rect can get in (otherwise they are not drawn)
 void LICE_DeltaBlit(LICE_IBitmap *dest, LICE_IBitmap *src, 
                     int dstx, int dsty, int dstw, int dsth,                     
@@ -405,6 +415,13 @@ void LICE_DeltaBlit(LICE_IBitmap *dest, LICE_IBitmap *src,
                     double dsdx, double dtdx, double dsdy, double dtdy,         
                     double dsdxdy, double dtdxdy,
                     bool cliptosourcerect, float alpha, int mode);
+
+void LICE_DeltaBlitAlpha(LICE_IBitmap *dest, LICE_IBitmap *src, 
+                    int dstx, int dsty, int dstw, int dsth,                     
+                    float srcx, float srcy, float srcw, float srch, 
+                    double dsdx, double dtdx, double dsdy, double dtdy,         
+                    double dsdxdy, double dtdxdy,
+                    bool cliptosourcerect, float alpha, int mode, double dadx, double dady, double dadxdy);
 
 
 // only LICE_BLIT_MODE_ADD or LICE_BLIT_MODE_COPY are used by this, for flags

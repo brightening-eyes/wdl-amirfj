@@ -14,6 +14,7 @@
 #include "../wdlcstring.h"
 #include "../eel2/ns-eel-int.h"
 
+
 EEL_Editor::EEL_Editor(void *cursesCtx) : MultiTab_Editor(cursesCtx), m_has_peek(true)
 {
   init_pair(3, RGB(0,255,255),COLOR_BLACK); // highlight for known words
@@ -163,7 +164,7 @@ int EEL_Editor::parse_format_specifier(const char *fmt_in, int *var_offs, int *v
 }
 
 
-void EEL_Editor::draw_string(int *ml, int *skipcnt, const char *str, int amt, int *attr, int newAttr, int comment_string_state)
+void EEL_Editor::draw_string(int *skipcnt, const char *str, int amt, int *attr, int newAttr, int comment_string_state)
 {
   if (amt > 0 && comment_string_state=='"')
   {
@@ -187,7 +188,7 @@ void EEL_Editor::draw_string(int *ml, int *skipcnt, const char *str, int amt, in
       if (str_scan > str) 
       {
         const int sz=wdl_min(str_scan-str,amt);
-        draw_string_urlchk(ml,skipcnt,str,sz,attr,newAttr);
+        draw_string_urlchk(skipcnt,str,sz,attr,newAttr);
         str += sz;
         amt -= sz;
       }
@@ -196,7 +197,7 @@ void EEL_Editor::draw_string(int *ml, int *skipcnt, const char *str, int amt, in
         const int sz=(varlen>0) ? wdl_min(varpos,amt) : wdl_min(l,amt);
         if (sz>0) 
         {
-          draw_string_internal(ml,skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT2);
+          draw_string_internal(skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT2);
           str += sz;
           amt -= sz;
         }
@@ -207,7 +208,7 @@ void EEL_Editor::draw_string(int *ml, int *skipcnt, const char *str, int amt, in
         int sz = wdl_min(varlen,amt);
         if (sz>0)
         {
-          draw_string_internal(ml,skipcnt,str,sz,attr,*str == '#' ? SYNTAX_STRINGVAR : SYNTAX_HIGHLIGHT1);
+          draw_string_internal(skipcnt,str,sz,attr,*str == '#' ? SYNTAX_STRINGVAR : SYNTAX_HIGHLIGHT1);
           amt -= sz;
           str += sz;
         }
@@ -215,17 +216,17 @@ void EEL_Editor::draw_string(int *ml, int *skipcnt, const char *str, int amt, in
         sz = wdl_min(l - varpos - varlen, amt);
         if (sz>0)
         {
-          draw_string_internal(ml,skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT2);
+          draw_string_internal(skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT2);
           amt-=sz;
           str+=sz;
         }
       }
     }
   }
-  draw_string_urlchk(ml,skipcnt,str,amt,attr,newAttr);
+  draw_string_urlchk(skipcnt,str,amt,attr,newAttr);
 }
 
-void EEL_Editor::draw_string_urlchk(int *ml, int *skipcnt, const char *str, int amt, int *attr, int newAttr)
+void EEL_Editor::draw_string_urlchk(int *skipcnt, const char *str, int amt, int *attr, int newAttr)
 {
   if (amt > 0 && (newAttr == SYNTAX_COMMENT || newAttr == SYNTAX_STRING))
   {
@@ -252,7 +253,7 @@ void EEL_Editor::draw_string_urlchk(int *ml, int *skipcnt, const char *str, int 
       if (str_scan > str)
       {
         const int sz=wdl_min(str_scan-str,amt);
-        draw_string_internal(ml,skipcnt,str,sz,attr,newAttr);
+        draw_string_internal(skipcnt,str,sz,attr,newAttr);
         str += sz;
         amt -= sz;
       }
@@ -260,22 +261,19 @@ void EEL_Editor::draw_string_urlchk(int *ml, int *skipcnt, const char *str, int 
       const int sz=wdl_min(l,amt);
       if (sz>0)
       {
-        draw_string_internal(ml,skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT1);
+        draw_string_internal(skipcnt,str,sz,attr,SYNTAX_HIGHLIGHT1);
         str += sz;
         amt -= sz;
       }
     }
   }
-  draw_string_internal(ml,skipcnt,str,amt,attr,newAttr);
+  draw_string_internal(skipcnt,str,amt,attr,newAttr);
 }
   
-void EEL_Editor::draw_string_internal(int *ml, int *skipcnt, const char *str, int amt, int *attr, int newAttr)
+void EEL_Editor::draw_string_internal(int *skipcnt, const char *str, int amt, int *attr, int newAttr)
 {
   if (amt>0)
   {
-    if (amt > *ml) amt = *ml;
-    *ml -= amt;
-
     const int sk = *skipcnt;
     if (amt < sk) 
     { 
@@ -354,45 +352,45 @@ bool EEL_Editor::sh_draw_parentokenstack_update(const char *tok, int toklen)
 }
 
 
-void EEL_Editor::mvaddnstr_highlight(int y, int x, const char *p, int ml, int *c_comment_state, int skipcnt)
+void EEL_Editor::draw_line_highlight(int y, const char *p, int *c_comment_state)
 {
   int last_attr = A_NORMAL;
   attrset(last_attr);
-  move(y, x);
-  int rv = do_draw_line(p, ml, c_comment_state, skipcnt, last_attr);
+  move(y, 0);
+  int rv = do_draw_line(p, c_comment_state, last_attr);
   attrset(rv< 0 ? SYNTAX_ERROR : A_NORMAL);
-  if (rv)
-  {
-    clrtoeol();
-    if (rv < 0) attrset(A_NORMAL);
-  }
+  clrtoeol();
+  if (rv < 0) attrset(A_NORMAL);
 }
 
-int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int skipcnt, int last_attr)
+int EEL_Editor::do_draw_line(const char *p, int *c_comment_state, int last_attr)
 {
+  //skipcnt = m_offs_x
   if (is_code_start_line(p)) 
   {
     *c_comment_state=0;
     s_draw_parentokenstack.Resize(0,false);
   }
 
+  int skipcnt = m_offs_x;
   int ignoreSyntaxState=0;
 #ifdef START_ON_VARS_KEYWORD
   if (!strnicmp(p,"var",3) && isspace(p[3]))
   {
     ignoreSyntaxState=-2;
-    draw_string(&ml,&skipcnt,p,3,&last_attr,SYNTAX_HIGHLIGHT1);
+    draw_string(&skipcnt,p,3,&last_attr,SYNTAX_HIGHLIGHT1);
     p+=3;
   }
   else
 #endif
-    ignoreSyntaxState = overrideSyntaxDrawingForLine(&ml, &skipcnt, &p, c_comment_state, &last_attr);
+    ignoreSyntaxState = overrideSyntaxDrawingForLine(&skipcnt, &p, c_comment_state, &last_attr);
 
   if (ignoreSyntaxState>0)
   {
-    draw_string(&ml,&skipcnt,p,strlen(p),&last_attr,ignoreSyntaxState==100 ? SYNTAX_ERROR : 
+    int len = (int)strlen(p);
+    draw_string(&skipcnt,p,len,&last_attr,ignoreSyntaxState==100 ? SYNTAX_ERROR : 
         ignoreSyntaxState==2 ? SYNTAX_COMMENT : A_NORMAL);
-    return ml>0;
+    return len-m_offs_x < COLS;
   }
 
 
@@ -404,10 +402,14 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
   int last_comment_state=*c_comment_state;
   while (NULL != (tok = sh_tokenize(&p,endptr,&toklen,c_comment_state)) || lp < endptr)
   {
+    if (tok && *tok < 0 && toklen == 1)
+    {
+      while (tok[toklen] < 0) {p++; toklen++; } // utf-8 skip
+    }
     if (last_comment_state>0) // if in a multi-line string or comment
     {
       // draw empty space between lp and p as a string. in this case, tok/toklen includes our string, so we quickly finish after
-      draw_string(&ml,&skipcnt,lp,p-lp,&last_attr, last_comment_state==1 ? SYNTAX_COMMENT:SYNTAX_STRING, last_comment_state);
+      draw_string(&skipcnt,lp,p-lp,&last_attr, last_comment_state==1 ? SYNTAX_COMMENT:SYNTAX_STRING, last_comment_state);
       last_comment_state=0;
       lp = p;
       continue;
@@ -416,7 +418,7 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
 
     // draw empty space between lp and tok/endptr as normal
     const char *adv_to = tok ? tok : endptr;
-    if (adv_to > lp) draw_string(&ml,&skipcnt,lp,adv_to-lp,&last_attr, A_NORMAL);
+    if (adv_to > lp) draw_string(&skipcnt,lp,adv_to-lp,&last_attr, A_NORMAL);
 
     if (adv_to >= endptr) break;
 
@@ -441,7 +443,7 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
       if (tok[0] == '#')
       {
         def_attr = SYNTAX_STRINGVAR;
-        draw_string(&ml,&skipcnt,tok,1,&last_attr,def_attr);
+        draw_string(&skipcnt,tok,1,&last_attr,def_attr);
         tok++;
         toklen--;
       }
@@ -453,13 +455,13 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
         if (this_len > 0)
         {
           const int attr=isf?namedTokenHighlight(tok,this_len,*c_comment_state):def_attr;
-          draw_string(&ml,&skipcnt,tok,this_len,&last_attr,attr==A_NORMAL?def_attr:attr);
+          draw_string(&skipcnt,tok,this_len,&last_attr,attr==A_NORMAL?def_attr:attr);
           tok += this_len;
           toklen -= this_len;
         }
         if (toklen > 0)
         {
-          draw_string(&ml,&skipcnt,tok,1,&last_attr,SYNTAX_HIGHLIGHT1);
+          draw_string(&skipcnt,tok,1,&last_attr,SYNTAX_HIGHLIGHT1);
           tok++;
           toklen--;
         }
@@ -524,7 +526,10 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
           attr = SYNTAX_HIGHLIGHT1;
       }
       else 
+      {
         err_left=1;
+        if (tok[0] < 0) while (err_left < toklen && tok[err_left]<0) err_left++; // utf-8 skip
+      }
     }
 
     if (ignoreSyntaxState) err_left = err_right = 0;
@@ -532,24 +537,24 @@ int EEL_Editor::do_draw_line(const char *p, int ml, int *c_comment_state, int sk
     if (err_left > 0) 
     {
       if (err_left > toklen) err_left=toklen;
-      draw_string(&ml,&skipcnt,tok,err_left,&last_attr,SYNTAX_ERROR);
+      draw_string(&skipcnt,tok,err_left,&last_attr,SYNTAX_ERROR);
       tok+=err_left;
       toklen -= err_left;
     }
     if (err_right > toklen) err_right=toklen;
 
-    draw_string(&ml, &skipcnt, tok, toklen - err_right, &last_attr, attr, start_of_tok);
+    draw_string(&skipcnt, tok, toklen - err_right, &last_attr, attr, start_of_tok);
 
     if (err_right > 0)
-      draw_string(&ml,&skipcnt,tok+toklen-err_right,err_right,&last_attr,SYNTAX_ERROR);
+      draw_string(&skipcnt,tok+toklen-err_right,err_right,&last_attr,SYNTAX_ERROR);
 
     if (ignoreSyntaxState == -1 && tok[0] == '>')
     {
-      draw_string(&ml,&skipcnt,p,strlen(p),&last_attr,ignoreSyntaxState==2 ? SYNTAX_COMMENT : A_NORMAL);
+      draw_string(&skipcnt,p,strlen(p),&last_attr,ignoreSyntaxState==2 ? SYNTAX_COMMENT : A_NORMAL);
       break;
     }
   }
-  return ml > 0;
+  return 1;
 }
 
 int EEL_Editor::GetCommentStateForLineStart(int line)
@@ -559,7 +564,7 @@ int EEL_Editor::GetCommentStateForLineStart(int line)
   s_declaredFuncs.DeleteAll();
   s_declaredVars.DeleteAll();
 #endif
-  m_indent_size=2;
+  if (m_write_leading_tabs<=0) m_indent_size=2;
   const bool uses_code_start_lines = !!is_code_start_line(NULL);
 
   int state=0;
@@ -940,12 +945,16 @@ void EEL_Editor::doParenMatching()
   const char *errmsg = "";
   if (NULL != (curstr=m_text.Get(m_curs_y)))
   {
-    if (m_curs_x >= curstr->GetLength()) m_curs_x=curstr->GetLength()-1;
-    if (m_curs_x<0) m_curs_x=0;
+    int bytex = WDL_utf8_charpos_to_bytepos(curstr->Get(),m_curs_x);
+    if (bytex >= curstr->GetLength()) bytex=curstr->GetLength()-1;
+    if (bytex<0) bytex = 0;
 
     int new_x,new_y;
-    if (eel_sh_get_matching_pos_for_pos(&m_text, m_curs_x,m_curs_y,&new_x,&new_y,&errmsg,this))
+    if (eel_sh_get_matching_pos_for_pos(&m_text, bytex,m_curs_y,&new_x,&new_y,&errmsg,this))
     {
+      curstr = m_text.Get(new_y);
+      if (curstr) new_x = WDL_utf8_bytepos_to_charpos(curstr->Get(),new_x);
+
       m_curs_x=new_x;
       m_curs_y=new_y;
       m_want_x=-1;
@@ -973,7 +982,8 @@ void EEL_Editor::doWatchInfo(int c)
   if (t)
   {
     const char *p=t->Get();
-    if (m_curs_x >= 0 && m_curs_x < t->GetLength()) curChar = p[m_curs_x];
+    const int bytex = WDL_utf8_charpos_to_bytepos(p,m_curs_x);
+    if (bytex >= 0 && bytex < t->GetLength()) curChar = p[bytex];
     if (c != KEY_F1 && (m_selecting || 
              curChar == '(' || 
              curChar == '[' ||
@@ -986,7 +996,7 @@ void EEL_Editor::doWatchInfo(int c)
       bool ok = false;
       if (!m_selecting)
       {
-        if (eel_sh_get_matching_pos_for_pos(&m_text,minx=m_curs_x,miny=m_curs_y,&maxx, &maxy,NULL,this))
+        if (eel_sh_get_matching_pos_for_pos(&m_text,minx=bytex,miny=m_curs_y,&maxx, &maxy,NULL,this))
         {
           if (maxy==miny)
           {
@@ -1014,6 +1024,11 @@ void EEL_Editor::doWatchInfo(int c)
       {
         ok=true; 
         getselectregion(minx,miny,maxx,maxy); 
+        WDL_FastString *s;
+        s = m_text.Get(miny);
+        if (s) minx = WDL_utf8_charpos_to_bytepos(s->Get(),minx);
+        s = m_text.Get(maxy);
+        if (s) maxx = WDL_utf8_charpos_to_bytepos(s->Get(),maxx);
       }
 
       if (ok)
@@ -1048,8 +1063,9 @@ void EEL_Editor::doWatchInfo(int c)
     }
     else if (curChar && (isalnum(curChar) || curChar == '_' || curChar == '.' || curChar == '#')) 
     {
-      const char *lp=p+m_curs_x;
-      const char *rp=p+m_curs_x+1;
+      const int bytex = WDL_utf8_charpos_to_bytepos(p,m_curs_x);
+      const char *lp=p+bytex;
+      const char *rp=lp + WDL_utf8_charpos_to_bytepos(lp,1);
       while (lp >= p && (isalnum(*lp) || *lp == '_' || *lp == '.')) lp--;
       if (lp < p || *lp != '#') lp++;
       while (*rp && (isalnum(*rp) || *rp == '_' || *rp == '.')) rp++;
@@ -1102,7 +1118,7 @@ int EEL_Editor::onChar(int c)
      setCursor();
   return 0;
 
-  case 'I'-'A'+1:
+  case 'R'-'A'+1:
     if (!m_selecting)
     {
       WDL_FastString *txtstr=m_text.Get(m_curs_y);
@@ -1152,7 +1168,7 @@ LRESULT EEL_Editor::onMouseMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
       if (CURSES_INSTANCE && CURSES_INSTANCE->m_font_w && CURSES_INSTANCE->m_font_h)
       {
         const int y = ((short)HIWORD(lParam)) / CURSES_INSTANCE->m_font_h - m_top_margin;
-        const int x = ((short)LOWORD(lParam)) / CURSES_INSTANCE->m_font_w + m_offs_x;
+        //const int x = ((short)LOWORD(lParam)) / CURSES_INSTANCE->m_font_w + m_offs_x;
         WDL_FastString *fs=m_text.Get(y + m_paneoffs_y[m_curpane]);
         if (fs && y >= 0)
         {

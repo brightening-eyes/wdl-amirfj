@@ -5,6 +5,7 @@
 
 #include "win32_utf8.h"
 #include "wdltypes.h"
+#include "wdlutf8.h"
 
 #ifdef _WIN32
 
@@ -37,26 +38,7 @@ extern "C" {
 
 BOOL WDL_HasUTF8(const char *_str)
 {
-  const unsigned char *str = (const unsigned char *)_str;
-  BOOL hasUTF=FALSE;
-  
-  if (str) while (*str) 
-  {
-    unsigned char c = *str++;
-    if (c<0x80) { } // allow 7 bit ascii straight through
-    else if (c < 0xC2 || c > 0xF7) return FALSE; // treat overlongs or other values in this range as indicators of non-utf8ness
-    else 
-    {
-      hasUTF=TRUE;
-      if (str[0] < 0x80 || str[0] > 0xBF) return FALSE;
-      else if (c < 0xE0) str++; 
-      else if (str[1] < 0x80 || str[1] > 0xBF) return FALSE;
-      else if (c < 0xF0) str+=2;
-      else if (str[2] < 0x80 || str[2] > 0xBF) return FALSE;
-      else str+=3;
-    }
-  }
-  return hasUTF;
+  return WDL_DetectUTF8(_str) > 0;
 }
 
 #ifdef AND_IS_NOT_WIN9X
@@ -74,12 +56,22 @@ BOOL WDL_HasUTF8(const char *_str)
 #define IS_NOT_WIN9X_AND
 #endif
 
+static ATOM s_combobox_atom;
+#define WDL_UTF8_OLDPROCPROP "WDLUTF8OldProc"
+
 int GetWindowTextUTF8(HWND hWnd, LPTSTR lpString, int nMaxCount)
 {
   if (!lpString) return 0;
   if (nMaxCount>0 AND_IS_NOT_WIN9X)
   {
     int alloc_size=nMaxCount;
+
+    // if a hooked combo box, and has an edit child, ask it directly
+    if (s_combobox_atom && s_combobox_atom == GetClassWord(hWnd,GCW_ATOM) && GetProp(hWnd,WDL_UTF8_OLDPROCPROP))
+    {
+      HWND h2=FindWindowEx(hWnd,NULL,"Edit",NULL);
+      if (h2) hWnd=h2;
+    }
 
     // prevent large values of nMaxCount from allocating memory unless the underlying text is big too
     if (alloc_size > 512)  
@@ -92,10 +84,12 @@ int GetWindowTextUTF8(HWND hWnd, LPTSTR lpString, int nMaxCount)
       WIDETOMB_ALLOC(wbuf, alloc_size);
       if (wbuf)
       {
-        GetWindowTextW(hWnd,wbuf,(int) (wbuf_size/sizeof(WCHAR)));
-
-        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpString,nMaxCount,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
-          lpString[nMaxCount-1]=0;
+        lpString[0]=0;
+        if (GetWindowTextW(hWnd,wbuf,(int) (wbuf_size/sizeof(WCHAR))))
+        {
+          if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpString,nMaxCount,NULL,NULL))
+            lpString[nMaxCount-1]=0;
+        }
 
         WIDETOMB_FREE(wbuf);
 
@@ -215,7 +209,7 @@ UINT DragQueryFileUTF8(HDROP hDrop, UINT idx, char *buf, UINT bufsz)
       UINT rv=DragQueryFileW(hDrop,idx,wbuf,(int)(wbuf_size/sizeof(WCHAR)));
       if (rv)
       {
-        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,buf,bufsz,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
+        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,buf,bufsz,NULL,NULL))
           buf[bufsz-1]=0;
       }
       WIDETOMB_FREE(wbuf);
@@ -575,8 +569,7 @@ DWORD GetCurrentDirectoryUTF8(DWORD nBufferLength, LPTSTR lpBuffer)
 
     WCHAR wbuf[WDL_UTF8_MAXFNLEN];
     wbuf[0]=0;
-    GetCurrentDirectoryW(WDL_UTF8_MAXFNLEN,wbuf);
-    if (wbuf[0])
+    if (GetCurrentDirectoryW(WDL_UTF8_MAXFNLEN,wbuf) && wbuf[0])
     {
       int rv=WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpBuffer,nBufferLength,NULL,NULL);
       if (rv) return rv;
@@ -702,7 +695,7 @@ BOOL GetMenuItemInfoUTF8( HMENU hMenu,UINT uItem, BOOL fByPosition, LPMENUITEMIN
 
       if (rv && (tmp.fType&(MFT_SEPARATOR|MFT_STRING|MFT_BITMAP)) == MFT_STRING)
       {
-        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpmii->dwTypeData,lpmii->cch,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
+        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpmii->dwTypeData,lpmii->cch,NULL,NULL))
         {
           lpmii->dwTypeData[lpmii->cch-1]=0;
         }
@@ -795,19 +788,21 @@ int GetKeyNameTextUTF8(LONG lParam, LPTSTR lpString, int nMaxCount)
     WIDETOMB_ALLOC(wbuf, nMaxCount);
     if (wbuf)
     {
-      GetKeyNameTextW(lParam,wbuf,(int) (wbuf_size/sizeof(WCHAR)));
+      const int v = GetKeyNameTextW(lParam,wbuf,(int) (wbuf_size/sizeof(WCHAR)));
 
-      if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpString,nMaxCount,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
-        lpString[nMaxCount-1]=0;
+      if (v)
+      {
+        lpString[0]=0;
+        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,lpString,nMaxCount,NULL,NULL))
+          lpString[nMaxCount-1]=0;
+      }
       WIDETOMB_FREE(wbuf);
 
-      return (int)strlen(lpString);
+      return v ? (int)strlen(lpString) : 0;
     }
   }
   return GetKeyNameTextA(lParam,lpString,nMaxCount);
 }
-
-
 
 HINSTANCE ShellExecuteUTF8(HWND hwnd, LPCTSTR lpOp, LPCTSTR lpFile, LPCTSTR lpParm, LPCTSTR lpDir, INT nShowCmd)
 {
@@ -828,10 +823,60 @@ HINSTANCE ShellExecuteUTF8(HWND hwnd, LPCTSTR lpOp, LPCTSTR lpFile, LPCTSTR lpPa
   return ShellExecuteA(hwnd,lpOp,lpFile,lpParm,lpDir,nShowCmd);
 }
 
+BOOL GetUserNameUTF8(LPTSTR lpString, LPDWORD nMaxCount)
+{
+  if (IS_NOT_WIN9X_AND lpString && nMaxCount)
+  {
+    WIDETOMB_ALLOC(wtmp,*nMaxCount);
+    if (wtmp)
+    {
+      DWORD sz=(DWORD)(wtmp_size/sizeof(WCHAR));
+      BOOL r = GetUserNameW(wtmp, &sz);
+      if (r && (!*nMaxCount || (!WideCharToMultiByte(CP_UTF8,0,wtmp,-1,lpString,*nMaxCount,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)))
+      {
+        if (*nMaxCount>0) lpString[*nMaxCount-1]=0;
+        *nMaxCount=wcslen(wtmp)+1;
+        r=FALSE;
+      }
+      else
+      {
+        *nMaxCount=sz;
+      }
+      WIDETOMB_FREE(wtmp);
+      return r;
+    }
+  }
+  return GetUserNameA(lpString, nMaxCount);
+}
+
+BOOL GetComputerNameUTF8(LPTSTR lpString, LPDWORD nMaxCount)
+{
+  if (IS_NOT_WIN9X_AND lpString && nMaxCount)
+  {
+    WIDETOMB_ALLOC(wtmp,*nMaxCount);
+    if (wtmp)
+    {
+      DWORD sz=(DWORD)(wtmp_size/sizeof(WCHAR));
+      BOOL r = GetComputerNameW(wtmp, &sz);
+      if (r && (!*nMaxCount || (!WideCharToMultiByte(CP_UTF8,0,wtmp,-1,lpString,*nMaxCount,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)))
+      {
+        if (*nMaxCount>0) lpString[*nMaxCount-1]=0;
+        *nMaxCount=wcslen(wtmp)+1;
+        r=FALSE;
+      }
+      else
+      {
+        *nMaxCount=sz;
+      }
+      WIDETOMB_FREE(wtmp);
+      return r;
+    }
+  }
+  return GetComputerNameA(lpString, nMaxCount);
+}
+
+
 #if (defined(WDL_WIN32_UTF8_IMPL_NOTSTATIC) || defined(WDL_WIN32_UTF8_IMPL_STATICHOOKS)) && !defined(WDL_WIN32_UTF8_NO_UI_IMPL)
-
-
-#define WDL_UTF8_OLDPROCPROP "WDLUTF8OldProc"
 
 static LRESULT WINAPI cb_newProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -861,17 +906,17 @@ static LRESULT WINAPI cb_newProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
       MBTOWIDE_FREE(wbuf);
     }
   }
-  else if (msg == CB_GETLBTEXT && lParam)
+  else if ((msg == CB_GETLBTEXT || msg == LB_GETTEXT) && lParam)
   {
     WNDPROC oldprocW = (WNDPROC)GetProp(hwnd,WDL_UTF8_OLDPROCPROP "W");
-    LRESULT l = CallWindowProcW(oldprocW ? oldprocW : oldproc,hwnd,CB_GETLBTEXTLEN,wParam,0);
+    LRESULT l = CallWindowProcW(oldprocW ? oldprocW : oldproc,hwnd,msg == CB_GETLBTEXT ? CB_GETLBTEXTLEN : LB_GETTEXTLEN,wParam,0);
     
     if (l != CB_ERR)
     {
       WIDETOMB_ALLOC(tmp,l+1);
       if (tmp)
       {
-        LRESULT rv=CallWindowProcW(oldprocW ? oldprocW : oldproc,hwnd,msg,wParam,(LPARAM)tmp)+1;
+        LRESULT rv=CallWindowProcW(oldprocW ? oldprocW : oldproc,hwnd,msg,wParam,(LPARAM)tmp);
         if (rv>=0)
         {
           *(char *)lParam=0;
@@ -884,7 +929,7 @@ static LRESULT WINAPI cb_newProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
       }
     }
   }
-  else if (msg == CB_GETLBTEXTLEN)
+  else if (msg == CB_GETLBTEXTLEN || msg == LB_GETTEXT)
   {
     WNDPROC oldprocW = (WNDPROC)GetProp(hwnd,WDL_UTF8_OLDPROCPROP "W");
     return CallWindowProcW(oldprocW ? oldprocW : oldproc,hwnd,msg,wParam,lParam) * 3 + 32; // make sure caller allocates a lot extra
@@ -902,6 +947,8 @@ void WDL_UTF8_HookComboBox(HWND h)
     GetProp(h,WDL_UTF8_OLDPROCPROP)) return;
   SetProp(h,WDL_UTF8_OLDPROCPROP "W",(HANDLE)GetWindowLongPtrW(h,GWLP_WNDPROC));
   SetProp(h,WDL_UTF8_OLDPROCPROP,(HANDLE)SetWindowLongPtr(h,GWLP_WNDPROC,(INT_PTR)cb_newProc));
+
+  if (!s_combobox_atom) s_combobox_atom = (ATOM)GetClassWord(h,GCW_ATOM);
 }
 
 void WDL_UTF8_HookListBox(HWND h)
@@ -992,7 +1039,7 @@ static LRESULT WINAPI tv_newProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         pItem->pszText = (char *)wbuf;
         rv=CallWindowProc(oldproc,hwnd,TVM_GETITEMW,wParam,lParam);
 
-        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,obuf,oldsz,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
+        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,obuf,oldsz,NULL,NULL))
           obuf[oldsz-1]=0;
 
         pItem->cchTextMax=oldsz;
@@ -1073,7 +1120,7 @@ static LRESULT WINAPI lv_newProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         pItem->pszText = (char *)wbuf;
         rv=CallWindowProc(oldproc,hwnd,msg==LVM_GETITEMTEXTA ? LVM_GETITEMTEXTW : LVM_GETITEMW,wParam,lParam);
 
-        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,obuf,oldsz,NULL,NULL) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
+        if (!WideCharToMultiByte(CP_UTF8,0,wbuf,-1,obuf,oldsz,NULL,NULL))
           obuf[oldsz-1]=0;
 
         pItem->cchTextMax=oldsz;
@@ -1139,7 +1186,7 @@ void WDL_UTF8_ListViewConvertDispInfoToW(void *_di)
       }
       else
       {
-        if (!MultiByteToWideChar(CP_ACP,MB_ERR_INVALID_CHARS,tmp,-1,(LPWSTR)di->item.pszText,di->item.cchTextMax) && GetLastError()==ERROR_INSUFFICIENT_BUFFER)
+        if (!MultiByteToWideChar(CP_ACP,MB_ERR_INVALID_CHARS,tmp,-1,(LPWSTR)di->item.pszText,di->item.cchTextMax))
           ((WCHAR *)di->item.pszText)[di->item.cchTextMax-1] = 0;
       }
     }   

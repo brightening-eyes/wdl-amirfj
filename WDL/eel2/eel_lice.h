@@ -298,8 +298,12 @@ public:
   char m_cursor_name[128];
 #endif
 
+#ifndef EEL_LICE_STANDALONE_NOINITQUIT
+  RECT m_last_undocked_r;
 #endif
-  bool m_has_cap; // to avoid reporting capture on nonclient mousedown
+
+#endif
+  int m_has_cap; // high 16 bits are current capture state, low 16 bits are temporary flags from mousedown
   bool m_has_had_getch; // set on first gfx_getchar(), makes mouse_cap updated with modifiers even when no mouse click is down
 };
 
@@ -313,6 +317,10 @@ eel_lice_state::eel_lice_state(NSEEL_VMCTX vm, void *ctx, int image_slots, int f
   memset(hwnd_standalone_kb_state,0,sizeof(hwnd_standalone_kb_state));
   m_kb_queue_valid=0;
   m_cursor_resid=0;
+#ifndef EEL_LICE_STANDALONE_NOINITQUIT
+  memset(&m_last_undocked_r,0,sizeof(m_last_undocked_r));
+#endif
+
 #ifdef EEL_LICE_LOADTHEMECURSOR
   m_cursor_name[0]=0;
 #endif
@@ -351,7 +359,7 @@ eel_lice_state::eel_lice_state(NSEEL_VMCTX vm, void *ctx, int image_slots, int f
 
   if (m_gfx_texth) *m_gfx_texth=8;
 
-  m_has_cap=false;
+  m_has_cap=0;
   m_has_had_getch=false;
 }
 eel_lice_state::~eel_lice_state()
@@ -536,7 +544,7 @@ static EEL_F NSEEL_CGEN_CALL _gfx_circle(void *opaque, INT_PTR np, EEL_F **parms
 static EEL_F NSEEL_CGEN_CALL _gfx_triangle(void* opaque, INT_PTR np, EEL_F **parms)
 {
   eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
-  if (ctx) ctx->gfx_triangle(parms, np);
+  if (ctx) ctx->gfx_triangle(parms, (int)np);
   return 0.0;
 }
 
@@ -587,7 +595,7 @@ static EEL_F NSEEL_CGEN_CALL _gfx_printf(void *opaque, INT_PTR nparms, EEL_F **p
   if (ctx && nparms>0) 
   {
     EEL_F v= **parms;
-    ctx->gfx_drawstr(opaque,parms,nparms,1);
+    ctx->gfx_drawstr(opaque,parms,(int)nparms,1);
     return v;
   }
   return 0.0;
@@ -772,16 +780,20 @@ void eel_lice_state::gfx_circle(float x, float y, float r, bool fill, bool aafla
 void eel_lice_state::gfx_triangle(EEL_F** parms, int np)
 {
   LICE_IBitmap *dest = GetImageForIndex(*m_gfx_dest, "gfx_triangle");
-  if (LICE_FUNCTION_VALID(LICE_FillTriangle) && LICE_FUNCTION_VALID(LICE_FillConvexPolygon) && np >= 6)
+  if (np >= 6)
   {
     np &= ~1;
     if (np == 6)
     {        
+      if (!LICE_FUNCTION_VALID(LICE_FillTriangle)) return;
+
       LICE_FillTriangle(dest, (int)parms[0][0], (int)parms[1][0], (int)parms[2][0], (int)parms[3][0], 
-        (int)parms[4][0], (int)parms[5][0], getCurColor(), (float)*m_gfx_a, getCurMode());
+          (int)parms[4][0], (int)parms[5][0], getCurColor(), (float)*m_gfx_a, getCurMode());
     }
     else
     {
+      if (!LICE_FUNCTION_VALID(LICE_FillConvexPolygon)) return;
+
       const int maxpt = 512;
       const int n = wdl_min(np/2, maxpt);
       int i, rdi=0;
@@ -791,8 +803,10 @@ void eel_lice_state::gfx_triangle(EEL_F** parms, int np)
         x[i]=(int)parms[rdi++][0];
         y[i]=(int)parms[rdi++][0];
       }
+
       LICE_FillConvexPolygon(dest, x, y, n, getCurColor(), (float)*m_gfx_a, getCurMode());
     }
+    SetImageDirty(dest);
   }
 }
 
@@ -1450,7 +1464,7 @@ static HMENU PopulateMenuFromStr(const char** str, int* startid)
   const char* sep=strchr(p, '|');
   while (sep || *p)
   {
-    int len = (sep ? sep-p : strlen(p));
+    int len = (int)(sep ? sep-p : strlen(p));
     int destlen=wdl_min(len, sizeof(buf)-1);
     lstrcpyn(buf, p, destlen+1);
     p += len;
@@ -1673,19 +1687,21 @@ int eel_lice_state::setup_frame(HWND hwnd, RECT r)
   
   if (*m_gfx_clear > -1.0)
   {
-    int a=(int)*m_gfx_clear;
-    int r=a&0xff;
-    int g=(a>>8)&0xff;
-    int b=(a>>16)&0xff;
-    if (LICE_FUNCTION_VALID(LICE_Clear)) LICE_Clear(m_framebuffer,LICE_RGBA(r,g,b,0));
+    const int a=(int)*m_gfx_clear;
+    if (LICE_FUNCTION_VALID(LICE_Clear)) LICE_Clear(m_framebuffer,LICE_RGBA((a&0xff),((a>>8)&0xff),((a>>16)&0xff),0));
   }
 
   int vflags=0;
 
   if (m_has_cap)
   {
-    if (GetAsyncKeyState(VK_LBUTTON)&0x8000) vflags|=1;
-    if (GetAsyncKeyState(VK_RBUTTON)&0x8000) vflags|=2;
+    bool swap = false;
+#ifdef _WIN32
+    swap = !!GetSystemMetrics(SM_SWAPBUTTON);
+#endif
+    vflags|=m_has_cap&0xffff;
+    if (GetAsyncKeyState(VK_LBUTTON)&0x8000) vflags|=swap?2:1;
+    if (GetAsyncKeyState(VK_RBUTTON)&0x8000) vflags|=swap?1:2;
     if (GetAsyncKeyState(VK_MBUTTON)&0x8000) vflags|=64;
   }
   if (m_has_cap || (m_has_had_getch && GetFocus()==hwnd))
@@ -1695,6 +1711,8 @@ int eel_lice_state::setup_frame(HWND hwnd, RECT r)
     if (GetAsyncKeyState(VK_MENU)&0x8000) vflags|=16;
     if (GetAsyncKeyState(VK_LWIN)&0x8000) vflags|=32;
   }
+  m_has_cap &= 0xf0000;
+
   *m_mouse_cap=(EEL_F)vflags;
 
   *m_gfx_dest = -1.0; // m_framebuffer
@@ -1979,12 +1997,17 @@ HWND eel_lice_state::create_wnd(HWND par, int isChild)
 #define ID_DOCKWINDOW 40269
 #endif
 
-static EEL_F NSEEL_CGEN_CALL _gfx_dock(void *opaque, EEL_F *n)
+static EEL_F NSEEL_CGEN_CALL _gfx_dock(void *opaque, INT_PTR np, EEL_F **parms)
 {
   eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
   if (ctx)
   {
-    if (*n >= 0.0 && ctx->hwnd_standalone) EEL_LICE_WANTDOCK(ctx,(int)*n);
+    if (np > 0 && parms[0][0] >= 0.0 && ctx->hwnd_standalone) EEL_LICE_WANTDOCK(ctx,(int)parms[0][0]);
+
+    if (np > 1 && parms[1]) parms[1][0] = ctx->m_last_undocked_r.left;
+    if (np > 2 && parms[2]) parms[2][0] = ctx->m_last_undocked_r.top;
+    if (np > 3 && parms[3]) parms[3][0] = ctx->m_last_undocked_r.right;
+    if (np > 4 && parms[4]) parms[4][0] = ctx->m_last_undocked_r.bottom;
 
 #ifdef EEL_LICE_ISDOCKED
     return EEL_LICE_ISDOCKED(ctx); 
@@ -2052,13 +2075,35 @@ static EEL_F NSEEL_CGEN_CALL _gfx_init(void *opaque, INT_PTR np, EEL_F **parms)
         if (sug_h < 16) sug_h=16;
         else if (sug_h > 1600) sug_w=1600;
 
+        #ifdef EEL_LICE_WANTDOCK
+          const int pos_offs = 4;
+        #else
+          const int pos_offs = 3;
+        #endif
+
+        int px=0,py=0;
+        if (np >= pos_offs+2)
+        {
+          px = (int) floor(parms[pos_offs][0] + 0.5);
+          py = (int) floor(parms[pos_offs+1][0] + 0.5);
+#ifdef EEL_LICE_VALIDATE_RECT_ON_SCREEN
+          RECT r = {px,py,px+sug_w,py+sug_h};
+          EEL_LICE_VALIDATE_RECT_ON_SCREEN(r);
+          px=r.left; py=r.top; sug_w = r.right-r.left; sug_h = r.bottom-r.top;
+#endif
+          ctx->m_last_undocked_r.left = px;
+          ctx->m_last_undocked_r.top = py;
+          ctx->m_last_undocked_r.right = sug_w;
+          ctx->m_last_undocked_r.bottom = sug_h;
+        }
+
         RECT r1,r2;
         GetWindowRect(ctx->hwnd_standalone,&r1);
         GetClientRect(ctx->hwnd_standalone,&r2);
         sug_w += (r1.right-r1.left) - r2.right;
         sug_h += abs(r1.bottom-r1.top) - r2.bottom;
 
-        SetWindowPos(ctx->hwnd_standalone,NULL,0,0,sug_w,sug_h,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+        SetWindowPos(ctx->hwnd_standalone,NULL,px,py,sug_w,sug_h,(np >= pos_offs+2 ? 0:SWP_NOMOVE)|SWP_NOZORDER|SWP_NOACTIVATE);
 
         wantShow=true;
         #ifdef EEL_LICE_WANTDOCK
@@ -2089,6 +2134,35 @@ static EEL_F NSEEL_CGEN_CALL _gfx_init(void *opaque, INT_PTR np, EEL_F **parms)
   }
   return 0;  
 }
+
+static EEL_F NSEEL_CGEN_CALL _gfx_screentoclient(void *opaque, EEL_F *x, EEL_F *y)
+{
+  eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
+  if (ctx && ctx->hwnd_standalone)
+  {
+    POINT pt={(int) *x, (int) *y};
+    ScreenToClient(ctx->hwnd_standalone,&pt);
+    *x = pt.x; 
+    *y = pt.y;
+    return 1.0;
+  }
+  return 0.0;
+}
+
+static EEL_F NSEEL_CGEN_CALL _gfx_clienttoscreen(void *opaque, EEL_F *x, EEL_F *y)
+{
+  eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
+  if (ctx && ctx->hwnd_standalone)
+  {
+    POINT pt={(int) *x, (int) *y};
+    ClientToScreen(ctx->hwnd_standalone,&pt);
+    *x = pt.x; 
+    *y = pt.y;
+    return 1.0;
+  }
+  return 0.0;
+}
+
 #endif // !EEL_LICE_STANDALONE_NOINITQUIT
 
 
@@ -2301,10 +2375,23 @@ LRESULT WINAPI eel_lice_wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
       GetClientRect(hwnd, &r);
       if (p.x >= r.left && p.x < r.right && p.y >= r.top && p.y < r.bottom)
       {
-        SetFocus(hwnd);
-        SetCapture(hwnd);
+        if (GetCapture()!=hwnd) SetFocus(hwnd);
         eel_lice_state *ctx=(eel_lice_state*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-        if (ctx) ctx->m_has_cap=true;
+        if (ctx) 
+        {
+          if (GetCapture()!=hwnd) SetCapture(hwnd);
+          int f = 0;
+          if (uMsg == WM_LBUTTONDBLCLK || uMsg == WM_LBUTTONDOWN) f=0x10001;
+          else if (uMsg == WM_RBUTTONDBLCLK || uMsg == WM_RBUTTONDOWN) f=0x20002;
+          else if (uMsg == WM_MBUTTONDBLCLK || uMsg == WM_MBUTTONDOWN) f=0x40040;
+
+          if (GetAsyncKeyState(VK_CONTROL)&0x8000) f|=4;
+          if (GetAsyncKeyState(VK_SHIFT)&0x8000) f|=8;
+          if (GetAsyncKeyState(VK_MENU)&0x8000) f|=16;
+          if (GetAsyncKeyState(VK_LWIN)&0x8000) f|=32;
+
+          ctx->m_has_cap|=f;
+        }
       }
     }
     return 1;
@@ -2313,9 +2400,25 @@ LRESULT WINAPI eel_lice_wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_MBUTTONUP:
     case WM_CAPTURECHANGED:
     {
-      if (uMsg != WM_CAPTURECHANGED) ReleaseCapture();
       eel_lice_state *ctx=(eel_lice_state*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-      if (ctx) ctx->m_has_cap=false;
+      if (ctx) 
+      {
+        if (uMsg == WM_CAPTURECHANGED) 
+        {
+          ctx->m_has_cap &= 0xffff;
+        }
+        else 
+        {
+          if (uMsg == WM_LBUTTONUP) ctx->m_has_cap &= ~0x10000;
+          else if (uMsg == WM_RBUTTONUP) ctx->m_has_cap &= ~0x20000;
+          else if (uMsg == WM_MBUTTONUP) ctx->m_has_cap &= ~0x40000;
+
+          if (!(ctx->m_has_cap & 0xf0000)) 
+          {
+            ReleaseCapture();
+          }
+        }
+      }
     }
     return 1;
 #ifdef _WIN32
@@ -2328,6 +2431,29 @@ LRESULT WINAPI eel_lice_wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         eel_lice_state *ctx=(eel_lice_state*)GetWindowLongPtr(hwnd,GWLP_USERDATA);
         if (ctx) ctx->m_framebuffer_refstate=0;
       }
+      // fall through
+#ifndef EEL_LICE_STANDALONE_NOINITQUIT
+    case WM_MOVE:
+      if (uMsg != WM_SIZE || wParam != SIZE_MINIMIZED)
+      {
+        eel_lice_state *ctx=(eel_lice_state*)GetWindowLongPtr(hwnd,GWLP_USERDATA);
+        if (ctx 
+#ifdef EEL_LICE_ISDOCKED
+          && !(GetWindowLong(hwnd,GWL_STYLE)&WS_CHILD)
+#endif
+          )  
+        {
+          RECT r;
+          GetWindowRect(hwnd,&ctx->m_last_undocked_r);
+          GetClientRect(hwnd,&r);
+          if (ctx->m_last_undocked_r.bottom < ctx->m_last_undocked_r.top) ctx->m_last_undocked_r.top = ctx->m_last_undocked_r.bottom;
+          ctx->m_last_undocked_r.right = r.right;
+          ctx->m_last_undocked_r.bottom = r.bottom;
+        }
+
+      }
+#endif
+
     break;
 
     case WM_PAINT:
@@ -2381,9 +2507,13 @@ void eel_lice_register_standalone(HINSTANCE hInstance, const char *classname, HW
 #ifndef EEL_LICE_STANDALONE_NOINITQUIT
   NSEEL_addfunc_varparm("gfx_init",1,NSEEL_PProc_THIS,&_gfx_init); 
   NSEEL_addfunc_retptr("gfx_quit",1,NSEEL_PProc_THIS,&_gfx_quit);
+
+  NSEEL_addfunc_retval("gfx_screentoclient",2,NSEEL_PProc_THIS,&_gfx_screentoclient);
+  NSEEL_addfunc_retval("gfx_clienttoscreen",2,NSEEL_PProc_THIS,&_gfx_clienttoscreen);
+
 #endif
 #ifdef EEL_LICE_WANTDOCK
-  NSEEL_addfunc_retval("gfx_dock",1,NSEEL_PProc_THIS,&_gfx_dock);
+  NSEEL_addfunc_varparm("gfx_dock",1,NSEEL_PProc_THIS,&_gfx_dock);
 #endif
 
 #ifdef EEL_LICE_WANT_STANDALONE_UPDATE
@@ -2429,7 +2559,8 @@ static void eel_lice_initfuncs(void *(*getFunc)(const char *name))
   *(void **)&LICE_ScaledBlit = getFunc("LICE_ScaledBlit");
   *(void **)&LICE_Circle = getFunc("LICE_Circle");
   *(void **)&LICE_FillCircle = getFunc("LICE_FillCircle");
-  *(void**)&LICE_FillTriangle=getFunc("LICE_FillTriangle");
+  *(void **)&LICE_FillTriangle=getFunc("LICE_FillTriangle");
+  *(void **)&LICE_FillConvexPolygon=getFunc("LICE_FillConvexPolygon");  
   *(void **)&LICE_RoundRect = getFunc("LICE_RoundRect");
   *(void **)&LICE_Arc = getFunc("LICE_Arc");
 
@@ -2464,9 +2595,9 @@ static const char *eel_lice_function_reference =
 #ifdef EEL_LICE_WANT_STANDALONE
 #ifndef EEL_LICE_STANDALONE_NOINITQUIT
 #ifdef EEL_LICE_WANTDOCK
-  "gfx_init\t\"name\"[,width,height,dockstate]\tInitializes the graphics window with title name. Suggested width and height can be specified.\n\n"
+  "gfx_init\t\"name\"[,width,height,dockstate,xpos,ypos]\tInitializes the graphics window with title name. Suggested width and height can be specified.\n\n"
 #else
-  "gfx_init\t\"name\"[,width,height]\tInitializes the graphics window with title name. Suggested width and height can be specified.\n\n"
+  "gfx_init\t\"name\"[,width,height,xpos,ypos]\tInitializes the graphics window with title name. Suggested width and height can be specified.\n\n"
 #endif
   "Once the graphics window is open, gfx_update() should be called periodically. \0"
   "gfx_quit\t\tCloses the graphics window.\0"
@@ -2476,7 +2607,7 @@ static const char *eel_lice_function_reference =
 #endif
 #endif
 #ifdef EEL_LICE_WANTDOCK
-  "gfx_dock\tv\tCall with v=-1 to query docked state, otherwise v>=0 to set docked state. State is &1 if docked, second byte is docker index (or last docker index if undocked).\0"
+  "gfx_dock\tv[,wx,wy,ww,wh]\tCall with v=-1 to query docked state, otherwise v>=0 to set docked state. State is &1 if docked, second byte is docker index (or last docker index if undocked). If wx-wh are specified, they will be filled with the undocked window position/size\0"
 #endif
   "gfx_aaaaa\t\t"
   "The following global variables are special and will be used by the graphics system:\n\n\3"
@@ -2572,6 +2703,12 @@ static const char *eel_lice_function_reference =
   "gfx_arc\tx,y,r,ang1,ang2[,antialias]\tDraws an arc of the circle centered at x,y, with ang1/ang2 being specified in radians.\0"
   "gfx_set\tr[,g,b,a,mode,dest]\tSets gfx_r/gfx_g/gfx_b/gfx_a/gfx_mode, sets gfx_dest if final parameter specified\0"
 
+#ifdef EEL_LICE_WANT_STANDALONE
+#ifndef EEL_LICE_STANDALONE_NOINITQUIT
+  "gfx_clienttoscreen\tx,y\tConverts client coordinates x,y to screen coordinates.\0"
+  "gfx_screentoclient\tx,y\tConverts screen coordinates x,y to client coordinates.\0"
+#endif
+#endif
 ;
 #ifdef EELSCRIPT_LICE_MAX_IMAGES
 #undef MKSTR2

@@ -79,10 +79,24 @@ typedef bool WDL_bool;
   #define WDL_STATICFUNC_UNUSED
 #endif
 
+#ifndef WDL_WANT_NEW_EXCEPTIONS
+#if defined(__cplusplus)
+#include <new>
+#define WDL_NEW (std::nothrow)
+#endif
+#else
+#define WDL_NEW
+#endif
 
-#ifndef max
+
+#if !defined(max) && defined(WDL_DEFINE_MINMAX)
 #define max(x,y) ((x)<(y)?(y):(x))
 #define min(x,y) ((x)<(y)?(x):(y))
+#endif
+
+#ifndef wdl_max
+#define wdl_max(x,y) ((x)<(y)?(y):(x))
+#define wdl_min(x,y) ((x)<(y)?(x):(y))
 #endif
 
 #ifndef _WIN32
@@ -99,7 +113,11 @@ typedef bool WDL_bool;
 #else
 // for multi-platform applications it seems better to treat backslashes as directory separators even if it
 // isn't supported by the underying system (for resolving filenames, etc)
-#define WDL_IS_DIRCHAR(x) ((x) == '\\' || (x) == '/')
+  #ifdef _WIN32
+    #define WDL_IS_DIRCHAR(x) ((x) == '\\' || (x) == '/')
+  #else
+    #define WDL_IS_DIRCHAR(x) ((x) == '/' || (x) == '\\')
+  #endif
 #endif
 
 #if defined(_WIN32) && !defined(WDL_BACKSLASHES_ARE_ORDINARY)
